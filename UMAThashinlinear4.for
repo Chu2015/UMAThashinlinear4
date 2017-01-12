@@ -122,16 +122,16 @@ c
             CDFULL(I,J)=CFULL(I,J)
          END DO
       END DO
-      IF ( (DFV .NE. ZERO) .OR. (DMV .NE. ZERO)) THEN
-         CDFULL(1,1) = (ONE - DFV) * CFULL(1,1)
-         CDFULL(1,2) = (ONE - DFV) * (ONE - DMV) * CFULL(1,2)
+      IF ( (DFVOLD .NE. ZERO) .OR. (DMVOLD .NE. ZERO)) THEN
+         CDFULL(1,1) = (ONE - DFVOLD) * CFULL(1,1)
+         CDFULL(1,2) = (ONE - DFVOLD) * (ONE - DMVOLD) * CFULL(1,2)
          CDFULL(2,1) = CDFULL(1,2)
-         CDFULL(2,2) = (ONE - DMV) * CFULL(2,2)
-         CDFULL(1,3) = (ONE - DFV) * CFULL(1,3)
+         CDFULL(2,2) = (ONE - DMVOLD) * CFULL(2,2)
+         CDFULL(1,3) = (ONE - DFVOLD) * CFULL(1,3)
          CDFULL(3,1) = CDFULL(1,3)
-         CDFULL(2,3) = (ONE- DMV) * CFULL(2,3)
+         CDFULL(2,3) = (ONE- DMVOLD) * CFULL(2,3)
          CDFULL(3,2) = CDFULL(2,3)
-         CDFULL(4,4) = (ONE - DMV) * (ONE - DFV) * CFULL(4,4)
+         CDFULL(4,4) = (ONE - DMVOLD) * (ONE - DFVOLD) * CFULL(4,4)
       END IF
 	  
       CALL MatrixCondense(CDFULL,C_CDTHREE)
