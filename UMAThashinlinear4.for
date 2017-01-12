@@ -117,15 +117,29 @@ c
    	  DDFDE2 = STATEV(15)
    	  DDFDE4 = STATEV(16)
 	  
-      CALL GetStress(CFULL,CDFULL,DFVOLD,DMVOLD,
-     1     C_STRESS,STRANT,NDI,NTENS)
+   	  DO I = 1, 6
+         DO J = 1, 6
+            CDFULL(I,J)=CFULL(I,J)
+         END DO
+      END DO
+      IF ( (DFV .NE. ZERO) .OR. (DMV .NE. ZERO)) THEN
+         CDFULL(1,1) = (ONE - DFV) * CFULL(1,1)
+         CDFULL(1,2) = (ONE - DFV) * (ONE - DMV) * CFULL(1,2)
+         CDFULL(2,1) = CDFULL(1,2)
+         CDFULL(2,2) = (ONE - DMV) * CFULL(2,2)
+         CDFULL(1,3) = (ONE - DFV) * CFULL(1,3)
+         CDFULL(3,1) = CDFULL(1,3)
+         CDFULL(2,3) = (ONE- DMV) * CFULL(2,3)
+         CDFULL(3,2) = CDFULL(2,3)
+         CDFULL(4,4) = (ONE - DMV) * (ONE - DFV) * CFULL(4,4)
+      END IF
 	  
       CALL MatrixCondense(CDFULL,C_CDTHREE)
 	  
       CALL CheckFailureIni(SIGTL,SIGCL,SIGTT,SIGCT,SIGSLT,STRANT,
      1     GFMAT,GFFIB,CELENT,CFULL,DF,DM,DDFDE,DDMDE,NTENS,DFOLD, 
      2     DMOLD,NDI,DDMDE1,DDMDE2,DDMDE4,DDFDE1,DDFDE2,DDFDE4,
-     3     C_STRESS,C_CDTHREE)
+     3     STRESS,C_CDTHREE)
 	 
 C     
 C     ! USE VISCOUS REGULARIZATION
