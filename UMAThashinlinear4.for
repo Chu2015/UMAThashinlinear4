@@ -1,0 +1,788 @@
+C     4X4 JACOBIAN THEN CONDENSATION WITH REGULARIZATION 
+c     (energy due to viscous regularization is calculated)
+      SUBROUTINE UMAT(STRESS,STATEV,DDSDDE,SSE,SPD,SCD,
+     1     RPL,DDSDDT,DRPLDE,DRPLDT,
+     2     STRAN,DSTRAN,TIME,DTIME,TEMP,DTEMP,PREDEF,DPRED,CMNAME,
+     3     NDI,NSHR,NTENS,NSTATV,PROPS,NPROPS,COORDS,DROT,PNEWDT,
+     4     CELENT,DFGRD0,DFGRD1,NOEL,NPT,LAYER,KSPT,KSTEP,KINC)
+C     
+      INCLUDE 'ABA_PARAM.INC'
+C     
+      CHARACTER*80 CMNAME
+      DIMENSION STRESS(NTENS),STATEV(NSTATV),
+     1     DDSDDE(NTENS,NTENS),
+     2     DDSDDT(NTENS),DRPLDE(NTENS),
+     3     STRAN(NTENS),DSTRAN(NTENS),TIME(2),PREDEF(1),DPRED(1),
+     4     PROPS(NPROPS),COORDS(3),DROT(3,3),DFGRD0(3,3),DFGRD1(3,3)
+      
+      DIMENSION STRANT(6),TSTRANT(4),DSTRES(3)
+      DIMENSION CFULL(6,6),CDFULL(6,6),C_CDTHREE(3,3)
+      DIMENSION DDFDE(6), DDMDE(6), DCDDF(6,6), DCDDM(6,6)
+      DIMENSION ATEMP1(6), ATEMP2(6), TDDSDDE(6,6)
+      DIMENSION OLD_STRESS(6),C_STRESS(3)
+      DIMENSION DOLD_STRESS(6),D_STRESS(6)
+      PARAMETER (ZERO = 0.D0,ONE = 1.D0,TWO = 2.D0, HALF = 0.5D0)
+C****************************
+C     STRANT..... STRAIN AT THE END OF THE INCREMENT
+C     TSTRANT.....TEMPORARY ARRAY TO HOLD THE STRAIN FOR PLANE STRESS PROBLEM
+C     CFULL.......FULL 6X6 ELASTICITY MATRIX
+C     CDFULL......FULL 6X6 DAMAGED ELASTICITY MATRIX
+C     DDFDE....... D DF/D E
+C     DDMDE....... D DM/D E
+C     DCDDF....... D C/ D DF THE DERIVATIVE OF THE FULL MATRIX OVER DF
+C     DCDDM........D C/ D DM THE DERIVATIVE OF THE FULL MATRIX OVER DM
+C     ATEMP1,ATEMP2...TEMPORARY ARRAY USED IN JACOBIAN CALCULATION
+C     TDDSDDE.....UNCONDENSED JACOBIAN MATRIX FOR PLANE STRESS PROBLEM
+C     OLD_STRESS...STRESS AT THE BEGINNING OF THE INCREMENT, SAVED FOR THE ENERGY
+C                  COMPUTATION
+C     DOLD_STRESS...STRESS AT THE BEGINNING OF THE INCREMENT, 
+C                  IF THERE'S NO VISCOUS REGULARIZATION
+C     D_STRESS...STRESS IF THERE'S NO VISCOUS REGULARIZATION, THE ABOVE IS CALCULATED
+C                TO CALCULATE THE SCD, ENERGY CAUSED BY VISCOUS REGULARIZATION
+C     STATEV(1)   damage variable df
+C     STATEV(2)   damage variable dm
+C     STATEV(3)   regularized damage variable dfv
+C     STATEV(4)   regularizaed damage variable dmv
+C     STATEV(5:10) TEMPORARY ARRAYS TO SAVE DOLD_STRESS
+C************
+C
+C     GET THE MATERIAL PROPERTIES---ENGINEERING CONSTANTS
+C
+      TENL = PROPS(1)           !YOUNG'S MODULUS IN DIRECTION 1 (L)
+      TENT = PROPS(2)           !YOUNG'S MODULUS IN DIRECTION 2 (T)
+      SHRLT = PROPS(3)          !SHEAR MODULUS IN 12 PLANE
+      SHRTT = PROPS(4)          !SHEAR MODULUS IN 23 PLANE
+      XNULT = PROPS(5)          !POISON'S RATIO POI_12
+      XNUTT = PROPS(6)          !POISON'S RATIO POI_23
+      XNUTL = XNULT / TENL * TENT !POI_21
+C     
+C     GET THE FAILURE PROPERTIES
+C
+      SIGTL = PROPS(7)          !FAILURE STRESS IN 1 DIRECTION IN TENSION
+      SIGCL = PROPS(8)          !FAILURE STRESS IN 1 DIRECTION IN COMPRESSION
+      SIGTT = PROPS(9)          !FAILURE STRESS IN 2 DIRECTION IN TENSION
+      SIGCT = PROPS(10)          !FAILURE STRESS IN 2 DIRECTION IN COMPRESSION
+      SIGSLT = PROPS(11)        !FAILURE STRESS IN SHEAR IN 1-2 PLANE
+      GFMAT = PROPS(12)         !FRACTURE ENERGY IN MATRIX
+      GFFIB = PROPS(13)         !FRACTURE ENERGY IN FIBER
+      ETA = PROPS(14)           ! VISCOSITY FOR REGULARIZATION
+C     
+C     CALCULATE THE STRAIN AT THE END OF THE INCREMENT
+C     
+      DO I = 1, NTENS
+         STRANT(I) = STRAN(I) + DSTRAN(I)
+      END DO
+c     
+C     FILL THE 6X6 FULL STIFFNESS MATRIX
+      DO I = 1, 6
+         DO J = 1, 6
+            CFULL(I,J)=ZERO
+         END DO
+      END DO
+      ATEMP = ONE - TWO * XNULT * XNUTL - XNUTT ** TWO
+     1     - TWO * XNULT * XNUTL * XNUTT
+      CFULL(1,1) = TENL * (ONE - XNUTT ** TWO) / ATEMP
+      CFULL(2,2) = TENT * (ONE - XNULT * XNUTL) / ATEMP
+      CFULL(3,3) = CFULL(2,2)
+      CFULL(1,2) = TENT * (XNULT + XNULT * XNUTT) / ATEMP
+      CFULL(1,3) = CFULL(1,2)
+      CFULL(2,3) = TENT * (XNUTT + XNULT * XNUTL) / ATEMP
+      CFULL(4,4) = SHRLT
+      CFULL(5,5) = SHRLT
+      CFULL(6,6) = SHRTT
+      DO I = 2, 6
+         DO J = 1, I-1
+            CFULL(I,J) = CFULL(J,I)
+         END DO
+      END DO
+c calculate the failure strain by failure stress
+      EPITL = SIGTL / cfull(1,1) !FAILURE STRAIN 1 DIRECTION IN TENSION
+      EPICL = SIGCL / cfull(1,1) !FAILURE STRAIN 1 DIRECTION IN COMPRESSION
+      EPITT = SIGTT / cfull(2,2) !TENSILE FAILURE STRAIN 2 DIRECTION
+      EPICT = SIGCT / cfull(2,2) !COMPRESSIVE FAILURE STRAIN 2 DIRECTION  
+      EPISLT = SIGSLT/ SHRLT    ! FAILURE SHEAR STRAIN ...ENGINEERING STRAIN
+C     
+C     CHECK THE FAILURE INITIATION CONDITION
+c     
+      DFOLD = STATEV(1)
+      DMOLD = STATEV(2)
+      DFVOLD = STATEV(3)
+      DMVOLD = STATEV(4)
+	  
+   	  DDMDE1 = STATEV(11)
+      DDMDE2 = STATEV(12)  
+      DDMDE4 = STATEV(13)
+   	  
+      DDFDE1 = STATEV(14)
+   	  DDFDE2 = STATEV(15)
+   	  DDFDE4 = STATEV(16)
+	  
+   	  DO I = 1, 6
+         DO J = 1, 6
+            CDFULL(I,J)=CFULL(I,J)
+         END DO
+      END DO
+	  
+      IF ( (DFVOLD .NE. ZERO) .OR. (DMVOLD .NE. ZERO)) THEN
+         CDFULL(1,1) = (ONE - DFVOLD) * CFULL(1,1)
+         CDFULL(1,2) = (ONE - DFVOLD) * (ONE - DMVOLD) * CFULL(1,2)
+         CDFULL(2,1) = CDFULL(1,2)
+         CDFULL(2,2) = (ONE - DMVOLD) * CFULL(2,2)
+         CDFULL(1,3) = (ONE - DFVOLD) * CFULL(1,3)
+         CDFULL(3,1) = CDFULL(1,3)
+         CDFULL(2,3) = (ONE- DMVOLD) * CFULL(2,3)
+         CDFULL(3,2) = CDFULL(2,3)
+         CDFULL(4,4) = (ONE - DMVOLD) * (ONE - DFVOLD) * CFULL(4,4)
+      END IF
+   	  CALL MatrixCondense(CDFULL,C_CDTHREE)
+	  
+      DO I = 1, NTENS
+  		  DSTRES(I)=ZERO
+      END DO
+	  
+   	  DO J=1,NTENS
+   	 	DO I=1,NTENS
+   			DSTRES(J)=DSTRES(J)+DDSDDE(J,I)*DSTRAN(I)
+   	 	END DO
+   	  END DO
+	
+   	  DO I=1,NTENS
+ 	   	STRESS(I)=STRESS(I)+DSTRES(I)
+   	  END DO
+	  
+      CALL CheckFailureIni(SIGTL,SIGCL,SIGTT,SIGCT,SIGSLT,STRANT,
+     1     GFMAT,GFFIB,CELENT,CFULL,DF,DM,DDFDE,DDMDE,NTENS,DFOLD, 
+     2     DMOLD,NDI,DDMDE1,DDMDE2,DDMDE4,DDFDE1,DDFDE2,DDFDE4,
+     3     STRESS,C_CDTHREE)
+	 
+C     
+C     ! USE VISCOUS REGULARIZATION
+C     
+      DFV = ETA / (ETA + DTIME) * DFVOLD + DTIME / (ETA + DTIME) * DF
+      DMV = ETA / (ETA + DTIME) * DMVOLD + DTIME / (ETA + DTIME) * DM
+C     SAVE THE OLD STRESS TO OLD_STRESS
+      DO I = 1, NTENS
+         OLD_STRESS(I) = STRESS(I)
+      END DO
+
+C     CALL ROUTINE TO CALCULATE THE STRESS
+C     CALCULATE THE STRESS IF THERE'S NO VISCOUS REGULARIZATION
+      CALL GetStress(CFULL,CDFULL,DF,DM,D_STRESS,STRANT,NDI,NTENS)
+C     CALCULATE THE STRESS IF THERE'S VISCOUS REGULARIZATION
+      CALL GetStress(CFULL,CDFULL,DFV,DMV,STRESS,STRANT,NDI,NTENS)
+C     GET THE OLD STRESS IF THERE'S NO VISCOUS REGULARIZATION
+      DO I=1,NTENS
+         DOLD_STRESS(I)=STATEV(I+4)
+      END DO
+C     SAVE THE CURRENT STRESS IF THERE'S NO VISCOUS REGULARIZATION
+      DO I=1,NTENS
+         STATEV(I+4)=D_STRESS(I)
+      END DO
+C     
+C     CALCULATE THE DERIVATIVE MATRIX DC/DDM, DC/DDF OF THE DAMAGED MATRIX
+C     
+      CALL ElasticDerivative(CFULL,DMV,DFV, DCDDM,DCDDF)
+C     
+C     UPDATE THE JACOBIAN
+C     
+C     FULL 3D CASE
+       IF (NDI .EQ. 3) THEN
+         DO I = 1, NTENS
+            ATEMP1(I) = ZERO
+            DO J = 1, NTENS
+               ATEMP1(I) = ATEMP1(I) + DCDDM(I,J) * STRANT(J)
+            END DO
+         END DO
+         
+         DO I = 1, NTENS
+            ATEMP2(I) = ZERO
+            DO J = 1, NTENS
+               ATEMP2(I) = ATEMP2(I) + DCDDF(I,J) * STRANT(J)
+            END DO
+         END DO
+         
+         DO I = 1, NTENS
+            DO J = 1, NTENS
+               DDSDDE(I,J)=CDFULL(I,J) + ( ATEMP1(I) * DDMDE(J)
+     1              + ATEMP2(I) * DDFDE(J) ) * DTIME / (DTIME + ETA)
+            END DO
+         END DO
+C     
+C     ! PLANE STRESS CASE
+C     
+      ELSE IF (NDI .EQ.2) THEN
+         TSTRANT(1) = STRANT(1)
+         TSTRANT(2) = STRANT(2)
+         TSTRANT(3) = -CDFULL(1,3) / CDFULL(3,3) * STRANT(1)
+     1        - CDFULL(2,3) / CDFULL(3,3) * STRANT(2)
+         TSTRANT(4) = STRANT(3)
+         DO I = 1, 4
+            ATEMP1(I) = ZERO
+            DO J = 1, 4
+               ATEMP1(I) = ATEMP1(I) + DCDDM(I,J) * TSTRANT(J)
+            END DO
+         END DO
+         
+         DO I = 1, 4
+            ATEMP2(I) = ZERO
+            DO J = 1, 4
+               ATEMP2(I) = ATEMP2(I) + DCDDF(I,J) * TSTRANT(J)
+            END DO
+         END DO
+         DO I = 1,6
+            DO J = 1,6
+            TDDSDDE(I,J) = ZERO
+            END DO
+         END DO
+C     TO GET THE UNCONDENSED JACOBIAN FOR PLANE STRESS CASE
+         DO I = 1, NTENS
+            DO J = 1, NTENS
+               DDSDDE(I,J) = ZERO
+            END DO
+         END DO
+         DO I = 1, 4
+            DO J = 1, 4
+               TDDSDDE(I,J)=CDFULL(I,J) + ( ATEMP1(I) * DDMDE(J)
+     1              + ATEMP2(I) * DDFDE(J) ) * DTIME / (DTIME + ETA)
+            END DO
+         END DO
+C     
+C     CONDENSE THE JACOBIAN MATRIX FOR PLANE STRESS PROBLEM
+C     
+         CALL MatrixCondense(TDDSDDE,DDSDDE)
+      END IF 
+C     
+C     TO UPDATE THE STATE VARIABLE
+C     
+   	  STATEV(1) = DF
+      STATEV(2) = DM
+      STATEV(3) = DFV
+      STATEV(4) = DMV
+      STATEV(11) = DDMDE(1)
+      STATEV(12) = DDMDE(2)
+   	  STATEV(13) = DDMDE(4)
+      STATEV(14) = DDFDE(1)
+   	  STATEV(15) = DDFDE(2)
+   	  STATEV(16) = DDFDE(4) 
+C     
+C     TO COMPUTE THE ENERGY
+C     
+      DO I = 1, NDI
+         SSE = SSE + HALF * (STRESS(I) + OLD_STRESS(I)) * DSTRAN(I)
+      END DO
+      DO I = NDI+1, NTENS
+         SSE = SSE + (STRESS(I) + OLD_STRESS(I)) * DSTRAN(I)
+      END DO
+C     TO COMPUTE THE INTERNAL ENERGY WITHOUT VISCOUS REGULARIZATION
+      DO I = 1, NDI
+         SCD = SCD + HALF * (STRESS(I) + OLD_STRESS(I)
+     1        -D_STRESS(I)-DOLD_STRESS(I)) * DSTRAN(I)
+      END DO
+      DO I = NDI+1, NTENS
+         SCD = SCD + (STRESS(I) + OLD_STRESS(I)
+     1        -D_STRESS(I)-DOLD_STRESS(I)) * DSTRAN(I)
+      END DO
+      
+      RETURN
+      END
+      
+C******************************************************************************
+C CALCULATE THE STRESS BASED ON THE DAMAGE VARAIBLES***************************
+C******************************************************************************
+      SUBROUTINE GetStress(CFULL,CDFULL,DFV,DMV,STRESS,STRANT,NDI,NTENS)
+      INCLUDE 'ABA_PARAM.INC'
+      DIMENSION CFULL(6,6),CDFULL(6,6),STRESS(NTENS),
+     1     STRANT(6),CDTHREE(3,3)
+      PARAMETER (ZERO=0.D0, ONE=1.D0)
+C     CDTHREE.....DAMAGED CONDENSED-ELASTICITY MATRIX FOR PLANE STRESS PROBLEM
+      DO I = 1, 6
+         DO J = 1, 6
+            CDFULL(I,J)=CFULL(I,J)
+         END DO
+      END DO
+      IF ( (DFV .NE. ZERO) .OR. (DMV .NE. ZERO)) THEN
+         CDFULL(1,1) = (ONE - DFV) * CFULL(1,1)
+         CDFULL(1,2) = (ONE - DFV) * (ONE - DMV) * CFULL(1,2)
+         CDFULL(2,1) = CDFULL(1,2)
+         CDFULL(2,2) = (ONE - DMV) * CFULL(2,2)
+         CDFULL(1,3) = (ONE - DFV) * CFULL(1,3)
+         CDFULL(3,1) = CDFULL(1,3)
+         CDFULL(2,3) = (ONE- DMV) * CFULL(2,3)
+         CDFULL(3,2) = CDFULL(2,3)
+         CDFULL(4,4) = (ONE - DMV) * (ONE - DFV) * CFULL(4,4)
+      END IF
+C   UPDATE THE STRESS STATE IF 3D CASE
+C
+      IF (NDI .EQ. 3) THEN
+         DO I = 1, NTENS
+            STRESS(I)=ZERO
+            DO J = 1, NTENS
+               STRESS(I)=STRESS(I)+CDFULL(I,J) * STRANT(J)
+            END DO
+         END DO
+         
+C     
+C     INITIALIZE THE 3X3 CONDENSED STIFFNESS MATRIX IF PLANE STRESS CASE
+C     
+      ELSE IF ( NDI .EQ. 2) THEN
+         DO I = 1, NTENS
+            DO J = 1, NTENS
+               CDTHREE(I,J)=ZERO
+            END DO
+         END DO
+C     
+C     
+C     CONDENSE THE UNDAMAGED STIFFNESS MATRIX
+C     
+         CALL MatrixCondense(CDFULL,CDTHREE)
+C     
+C     UPDATE THE STRESS
+C     
+         DO I = 1, NTENS
+            STRESS(I)=ZERO
+            DO J = 1, NTENS
+               STRESS(I)=STRESS(I)+CDTHREE(I,J) * STRANT(J)
+            END DO
+         END DO
+      END IF 
+      RETURN
+      END
+C******************************************************************************
+C     TO CHECK THE FAILURE INITIATION AND THE CORRESPONDING DERIVATIVE*********
+C******************************************************************************
+      SUBROUTINE CheckFailureIni(SIGTL,SIGCL,SIGTT,SIGCT,SIGSLT,STRANT,
+     1     GFMAT,GFFIB,CELENT,CFULL,DF,DM,DDFDE,DDMDE,NTENS,DFOLD,
+     2     DMOLD,NDI,DDMDE1,DDMDE2,DDMDE4,DDFDE1,DDFDE2,DDFDE4,
+     3     STRESS,CDTHREE)
+      INCLUDE 'ABA_PARAM.INC'
+      DIMENSION DDFDE(6),DDMDE(6),STRANT(6),CFULL(6,6),CDTHREE(3,3)
+      DIMENSION STRESS(NTENS)
+      PARAMETER (ZERO = 0.D0, ONE = 1.D0, TWO = 2.D0, 
+     1     HALF = 0.5D0, FOUR = 4.D0)
+C     
+C     CHECK THE INITIATION CONDITION FOR MATRIX
+C     FMN=FM/EPITT > 1 THEN EVALUATE THE DAMAGE VARIABLE AND DERIVATIVE
+C      
+   	  IF(STRESS(2) .GT. ZERO) THEN
+    	  TERM1 = (STRESS(2))**TWO / SIGTT**TWO  		
+	      IF (NDI .EQ. 3) THEN
+		   	TERM2 = (STRESS(4))**TWO / SIGSLT**TWO
+          ELSE IF (NDI .EQ. 2) THEN
+		   	TERM2 = (STRESS(3))**TWO / SIGSLT**TWO
+	   	  END IF
+    	  FMN = TERM1 + TERM2 
+      ELSE IF(STRESS(2) .LT. ZERO) THEN
+	  	  TERM1 = (STRESS(2))**TWO / (TWO*SIGSLT)**TWO  	
+	  	  TERM2 = ((SIGCT/(TWO*SIGSLT))**TWO - ONE)*STRESS(2)/SIGCT
+	      IF (NDI .EQ. 3) THEN
+		   	TERM3 = (STRESS(4))**TWO / SIGSLT**TWO
+          ELSE IF (NDI .EQ. 2) THEN
+		   	TERM3 = (STRESS(3))**TWO / SIGSLT**TWO
+	   	  END IF
+    	  FMN = TERM1 + TERM2 + TERM3
+   	  ELSE
+	   	  FMN = ZERO
+   	  END IF
+   	  
+C
+C     INITIALIZE THE ARRAY AND VARIABLE
+C
+      DM = ZERO
+      DO I = 1, 6
+         DDMDE(I) = ZERO
+      END DO
+   	  DDMDE(1)=DDMDE1
+      DDMDE(2)=DDMDE2
+      DDMDE(4)=DDMDE4
+C**** MATRIX TENSION  
+      IF ((FMN .GT. ONE) .AND. (DMOLD .LT. ONE) .AND. 
+     1   (STRESS(2) .GT. ZERO)) THEN
+C     CALCULATE DM
+
+ 	   	IF (NDI .EQ. 3) THEN
+   			CALL DamageEvaluationmatrix(GFMAT,CELENT,
+     1     SIGTT,SIGSLT,DM ,STRESS(2),STRESS(4),STRANT(2),STRANT(4))
+     	ELSE IF (NDI .EQ. 2) THEN
+   			CALL DamageEvaluationmatrix(GFMAT,CELENT,
+     1     SIGTT,SIGSLT,DM ,STRESS(2),STRESS(3),STRANT(2),STRANT(3))
+     	END IF
+	        
+C     CALCULATE DDMDE
+         IF ((DM .GT. DMOLD) .AND. (DM .LT. ONE)) THEN
+	   		IF (NDI .EQ. 3) THEN
+	            DDMDE(2)=ZERO
+		   	ELSE IF (NDI .EQ. 2) THEN
+			    TERM1 = (STRESS(2) / SIGTT)**TWO 
+	    	    TERM2 = (STRESS(3) / SIGSLT)**TWO
+		  		TERM = TERM1 + TERM2
+			  	TERM3=TWO*GFMAT*(TERM-SQRT(TERM))
+			    TERM4=TWO*GFMAT*TERM-CELENT*(STRESS(2)*STRANT(2) 
+     1			    + STRESS(3)*STRANT(3))
+		        TERM5=TWO*GFMAT*(STRESS(2)*CDTHREE(2,2)/SIGTT**TWO +STRESS(3)
+     1				*CDTHREE(3,2)/SIGSLT**TWO)*(TWO-ONE/SQRT(TERM))
+			  	TERM6=FOUR*GFMAT*(STRESS(2)*CDTHREE(2,2)/SIGTT**TWO +STRESS(3)
+     1				*CDTHREE(3,2)/SIGSLT**TWO)-CELENT*(STRESS(2)
+     2      		+CDTHREE(2,2)*STRANT(2)+CDTHREE(3,2)*STRANT(3))
+	            DDMDE(2)=(TERM5*TERM4-TERM6*TERM3)/TERM4**TWO
+	   		END IF
+			
+	  	 	IF (NDI .EQ. 3) THEN	
+	  			DDMDE(4)=ZERO
+            ELSE IF (NDI .EQ. 2) THEN
+	  			TERM1 = (STRESS(2) / SIGTT)**TWO 
+	    	    TERM2 = (STRESS(3) / SIGSLT)**TWO
+		  		TERM = TERM1 + TERM2
+			  	TERM3=TWO*GFMAT*(TERM-SQRT(TERM))
+			    TERM4=TWO*GFMAT*TERM-CELENT*(STRESS(2)*STRANT(2) 
+     1				+ STRESS(3)*STRANT(3))
+		        TERM5=TWO*GFMAT*(STRESS(2)*CDTHREE(2,3)/SIGTT**TWO +STRESS(3)
+     1				*CDTHREE(3,3)/SIGSLT**TWO)*(TWO-ONE/SQRT(TERM))
+			  	TERM6=TWO*GFMAT*TWO*(STRESS(2)*CDTHREE(2,3)/SIGTT**TWO +STRESS(3)
+     1				*CDTHREE(3,3)/SIGSLT**TWO)-CELENT*(STRESS(3)
+     2      		+CDTHREE(2,3)*STRANT(2)+CDTHREE(3,3)*STRANT(3))
+	            DDMDE(4)=(TERM5*TERM4-TERM6*TERM3)/TERM4**TWO
+	   		END IF
+			
+	   		IF (NDI .EQ. 3) THEN
+		  		DDMDE(1)=ZERO
+	   		ELSE IF (NDI .EQ. 2) THEN
+	  			TERM1 = (STRESS(2) / SIGTT)**TWO 
+	    	    TERM2 = (STRESS(3) / SIGSLT)**TWO
+		  		TERM = TERM1 + TERM2
+			  	TERM3=TWO*GFMAT*(TERM-SQRT(TERM))
+			    TERM4=TWO*GFMAT*TERM-CELENT*(STRESS(2)*STRANT(2) 
+     1				+ STRESS(3)*STRANT(3))
+		        TERM5=TWO*GFMAT*(STRESS(2)*CDTHREE(2,1)/SIGTT**TWO +STRESS(3)
+     1				*CDTHREE(3,1)/SIGSLT**TWO)*(TWO-ONE/SQRT(TERM))
+		
+			  	TERM6=TWO*GFMAT*TWO*(STRESS(2)*CDTHREE(2,1)/SIGTT**TWO +STRESS(3)
+     1				*CDTHREE(3,1)/SIGSLT**TWO)-CELENT*(CDTHREE(2,1)*STRANT(2)
+     2      		+CDTHREE(3,1)*STRANT(3))
+	            DDMDE(1)=(TERM5*TERM4-TERM6*TERM3)/TERM4**TWO
+  	   	   END IF
+		   
+         ELSE IF(DM .GE. ONE )THEN
+		     DM = ONE
+		  	 DDMDE(2)=ZERO
+		  	 DDMDE(4)=ZERO
+	  		 DDMDE(1)=ZERO
+         END IF
+      END IF
+	  
+C**** MATRIX COMPRESSION  
+      IF ((FMN .GT. ONE) .AND. (DMOLD .LT. ONE) .AND. 
+     1   (STRESS(2) .LT. ZERO)) THEN
+C     CALCULATE DM
+     	IF (NDI .EQ. 3) THEN
+           CALL DamageEvaluationmatrix2(GFMAT,CELENT,
+     1     SIGCT,SIGSLT,DM ,STRESS(2),STRESS(4),STRANT(2),STRANT(4))
+ 	    ELSE IF (NDI .EQ. 2) THEN
+	  	   	CALL DamageEvaluationmatrix2(GFMAT,CELENT,
+     1     SIGCT,SIGSLT,DM ,STRESS(2),STRESS(3),STRANT(2),STRANT(3))
+     	END IF
+		    
+C     CALCULATE DDMDE
+         IF ((DM .GT. DMOLD) .AND. (DM .LT. ONE)) THEN
+		     GAMA = ((SIGCT/(TWO*SIGSLT))**TWO - ONE)*STRESS(2)/SIGCT
+   		  	 BETA = STRESS(2)**TWO / (TWO*SIGSLT)**TWO 
+     1	 		     + STRESS(3)**TWO / SIGSLT**TWO
+  		 	IF (NDI .EQ. 3) THEN
+		  		DDMDE(1)=ZERO
+	   		ELSE IF (NDI .EQ. 2) THEN	
+			  	 TERM1 = STRESS(2)* CDTHREE(2,1)/(TWO*SIGSLT**TWO)
+     1			     +TWO*STRESS(3)*CDTHREE(3,1)/SIGSLT**TWO
+	 			 TERM2 = ((SIGCT/(TWO*SIGSLT))**TWO - ONE)*CDTHREE(2,1)/SIGCT
+				 
+		   		 TERM3 = 8.D0*GFMAT*BETA**TWO - 
+     1	   	    	 4.D0*GFMAT*BETA*(SQRT(GAMA**TWO+4.D0*BETA)-GAMA)
+    	             TERM4 = 8.D0*GFMAT*BETA**TWO - CELENT*(ABS(STRESS(2))
+     1	     		 *ABS(STRANT(2))+STRESS(3)*STRANT(3))*(TWO*GAMA**TWO+
+     2	   	 		 4.D0*BETA-TWO*GAMA*SQRT(GAMA**TWO+4.D0*BETA))
+			 	
+       TERM5 = 16.D0*GFMAT*BETA*TERM1-4.D0*GFMAT*TERM1*(SQRT(GAMA**TWO
+     1    +4.D0*BETA)-GAMA)-4.D0*GFMAT*BETA*(TWO*TERM1/SQRT(GAMA**TWO+
+     2    4.D0*BETA)+(GAMA/SQRT(GAMA**TWO+4.D0*BETA)-ONE)*TERM2)
+       TERM6 = 16.D0*GFMAT*BETA*TERM1-CELENT*((CDTHREE(2,1)*STRANT(2)+
+     1    CDTHREE(3,1)*STRANT(3))*(TWO*GAMA**TWO+4.D0*BETA-TWO*GAMA*
+     2    SQRT(GAMA**TWO+4.D0*BETA))+(ABS(STRESS(2))
+     3    *ABS(STRANT(2))+STRESS(3)*STRANT(3))*((ONE-GAMA/
+     4    SQRT(GAMA**TWO+4.D0*BETA))*4.D0*TERM1+(4.D0*GAMA-TWO*
+     5    SQRT(GAMA**TWO+4.D0*BETA)-TWO*GAMA**TWO/SQRT(GAMA**TWO
+     6    +4.D0*BETA))*TERM2))
+                  DDMDE(1)= (TERM5*TERM4-TERM6*TERM3)/TERM4**TWO
+  	   	    END IF
+			
+            IF (NDI .EQ. 3) THEN
+	            DDMDE(2)=ZERO
+		   	ELSE IF (NDI .EQ. 2) THEN
+			     TERM1 = STRESS(2)* CDTHREE(2,2)/(TWO*SIGSLT**TWO)
+     1			     +TWO*STRESS(3)*CDTHREE(3,2)/SIGSLT**TWO
+	 			 TERM2 = ((SIGCT/(TWO*SIGSLT))**TWO - ONE)*CDTHREE(2,2)/SIGCT
+                  
+		  		 TERM3 = 8.D0*GFMAT*BETA**TWO - 
+     1	   	    	 4.D0*GFMAT*BETA*(SQRT(GAMA**TWO+4.D0*BETA)-GAMA)
+                   TERM4 = 8.D0*GFMAT*BETA**TWO - CELENT*(ABS(STRESS(2))
+     1	     		 *ABS(STRANT(2))+STRESS(3)*STRANT(3))*(TWO*GAMA**TWO+
+     2	   	 		 4.D0*BETA-TWO*GAMA*SQRT(GAMA**TWO+4.D0*BETA))
+			   
+         TERM5 = 16.D0*GFMAT*BETA*TERM1-4.D0*GFMAT*TERM1*(SQRT(GAMA**TWO
+     1     +4.D0*BETA)-GAMA)-4.D0*GFMAT*BETA*(TWO*TERM1/SQRT(GAMA**TWO+
+     2     4.D0*BETA)+(GAMA/SQRT(GAMA**TWO+4.D0*BETA)-ONE)*TERM2)
+         
+          TERM6 = 16.D0*GFMAT*BETA*TERM1-CELENT*((CDTHREE(2,2)
+     1     *STRANT(2)+STRESS(2)+CDTHREE(3,2)*STRANT(3))
+     2     *(TWO*GAMA**TWO+4.D0*BETA-TWO*GAMA*
+     3     SQRT(GAMA**TWO+4.D0*BETA))+(ABS(STRESS(2))
+     4     *ABS(STRANT(2))+STRESS(3)*STRANT(3))*((ONE-GAMA/
+     5     SQRT(GAMA**TWO+4.D0*BETA))*4.D0*TERM1+(4.D0*GAMA-TWO*
+     6     SQRT(GAMA**TWO+4.D0*BETA)-TWO*GAMA**TWO/SQRT(GAMA**TWO
+     7     +4.D0*BETA))*TERM2))
+	 
+	            DDMDE(2)=(TERM5*TERM4-TERM6*TERM3)/TERM4**TWO
+	   		END IF
+			
+	  	 	IF (NDI .EQ. 3) THEN	
+	  			DDMDE(4)=ZERO
+            ELSE IF (NDI .EQ. 2) THEN
+	             TERM1 = STRESS(2)* CDTHREE(2,3)/(TWO*SIGSLT**TWO)
+     1			     +TWO*STRESS(3)*CDTHREE(3,3)/SIGSLT**TWO
+	 			 TERM2 = ((SIGCT/(TWO*SIGSLT))**TWO - ONE)*CDTHREE(2,3)/SIGCT
+
+  				 TERM3 = 8.D0*GFMAT*BETA**TWO - 
+     1	   	    	 4.D0*GFMAT*BETA*(SQRT(GAMA**TWO+4.D0*BETA)-GAMA)
+    	             TERM4 = 8.D0*GFMAT*BETA**TWO - CELENT*(ABS(STRESS(2))
+     1	     		 *ABS(STRANT(2))+STRESS(3)*STRANT(3))*(TWO*GAMA**TWO+
+     2	   	 		 4.D0*BETA-TWO*GAMA*SQRT(GAMA**TWO+4.D0*BETA))
+	  
+          TERM5 =16.D0*GFMAT*BETA*TERM1-4.D0*GFMAT*TERM1*(SQRT(GAMA**TWO
+     1     +4.D0*BETA)-GAMA)-4.D0*GFMAT*BETA*(TWO*TERM1/SQRT(GAMA**TWO+
+     2     4.D0*BETA)+(GAMA/SQRT(GAMA**TWO+4.D0*BETA)-ONE)*TERM2)
+          
+          TERM6 = 16.D0*GFMAT*BETA*TERM1-CELENT*((CDTHREE(2,3)
+     1     *STRANT(2)+STRESS(3)+CDTHREE(3,3)*STRANT(3))
+     2     *(TWO*GAMA**TWO+4.D0*BETA-TWO*GAMA*
+     3     SQRT(GAMA**TWO+4.D0*BETA))+(ABS(STRESS(2))
+     4     *ABS(STRANT(2))+STRESS(3)*STRANT(3))*((ONE-GAMA/
+     5     SQRT(GAMA**TWO+4.D0*BETA))*4.D0*TERM1+(4.D0*GAMA-TWO*
+     6     SQRT(GAMA**TWO+4.D0*BETA)-TWO*GAMA**TWO/SQRT(GAMA**TWO
+     7     +4.D0*BETA))*TERM2))
+	  
+	            DDMDE(4)=(TERM5*TERM4-TERM6*TERM3)/TERM4**TWO
+	   		END IF
+        
+   		 ELSE IF(DM .GE. ONE )THEN
+		     DM = ONE
+		  	 DDMDE(2)=ZERO
+		  	 DDMDE(4)=ZERO
+	    	 DDMDE(1)=ZERO
+         END IF
+      END IF
+	  
+      DM = MAX (DM, DMOLD)
+C     
+C     CHECK THE INITIATION CONDITION FOR FIBER
+C     FFN=FF/EPITL>1 THEN CALCULATE THE DAMAGE VARIABLE AND DERIVATIVE
+C     
+      IF  (STRESS(1) .GT. ZERO) THEN
+   	 	  TERM= (STRESS(1) / SIGTL)**TWO
+   	  ELSE IF(STRESS(1) .LT. ZERO) THEN
+	      TERM= (STRESS(1) / SIGCL)**TWO
+      ELSE
+	  	  TERM= ZERO
+   	  END IF
+			
+      FFN = TERM
+ 
+	  DF = ZERO
+      DO I = 1, 6
+           DDFDE(I) = ZERO
+      END DO
+      DDFDE(1) = DDFDE1
+   	  DDFDE(2) = DDFDE2
+   	  DDFDE(4) = DDFDE4
+	  
+      IF ((FFN .GT. ONE) .AND. (DFOLD .LT. ONE) .AND. 
+     1      (STRESS(1) .GT. ZERO)) THEN
+C     CALCULATE DF
+           CALL DamageEvaluationfiber( GFFIB, CELENT,
+     1          SIGTL, DF, STRESS(1),STRANT(1))
+C     CALCULATE DDFDE
+            IF ((DF .GT. DFOLD) .AND. (DF .LT. ONE)) THEN
+              TERM1 = TWO*GFFIB-CELENT*ABS(STRANT(1))
+     1		  *(SIGTL**2)/ABS(STRESS(1))
+	 		  TERM2 = TWO*GFFIB*(ONE-SIGTL/STRESS(1))
+	 		  TERM3 = TWO*GFFIB*(ONE+SIGTL*CDTHREE(1,1)/STRESS(1)**TWO)
+	 		  TERM4 = CELENT*SIGTL**TWO*(ONE/STRESS(1)
+     1	    	  -STRANT(1)*CDTHREE(1,1)/STRESS(1)**TWO)
+		  	  DDFDE(1) = (TERM3*TERM1+TERM4*TERM2)/TERM1**TWO
+			  
+	 		  TERM1 = TWO*GFFIB-CELENT*ABS(STRANT(1))
+     1		  *(SIGTL**2)/ABS(STRESS(1))
+	 		  TERM2 = TWO*GFFIB*(ONE-SIGTL/STRESS(1))
+		 	  TERM3 = TWO*GFFIB*(ONE+SIGTL*CDTHREE(1,2)/STRESS(1)**TWO)
+		  	  TERM4 = CELENT*SIGTL**TWO*(
+     1	    	  -STRANT(1)*CDTHREE(1,2)/STRESS(1)**TWO)
+		 	  DDFDE(2) = (TERM3*TERM1+TERM4*TERM2)/TERM1**TWO
+			  
+		 	  TERM1 = TWO*GFFIB-CELENT*ABS(STRANT(1))
+     1		  *(SIGTL**2)/ABS(STRESS(1))
+	 		  TERM2 = TWO*GFFIB*(ONE-SIGTL/STRESS(1))
+		 	  TERM3 = TWO*GFFIB*(ONE+SIGTL*CDTHREE(1,3)/STRESS(1)**TWO)
+		  	  TERM4 = CELENT*SIGTL**TWO*(
+     1	    	  -STRANT(1)*CDTHREE(1,3)/STRESS(1)**TWO)
+		 	  DDFDE(4) = (TERM3*TERM1+TERM4*TERM2)/TERM1**TWO
+			  
+ 	        ELSE IF(DF .GE. ONE )THEN
+ 		      DF = ONE
+ 		  	  DDFDE(1) = ZERO
+	 		  DDFDE(2) = ZERO
+	   	      DDFDE(4) = ZERO
+            END IF
+      END IF
+   	  
+      IF ((FFN .GT. ONE) .AND. (DFOLD .LT. ONE) .AND. 
+     1      (STRESS(1) .LT. ZERO)) THEN
+C     CALCULATE DF
+          CALL DamageEvaluationfiber( GFFIB, CELENT,
+     1          SIGCL, DF, STRESS(1),STRANT(1))
+C     CALCULATE DDFDE
+           IF ((DF .GT. DFOLD) .AND. (DF .LT. ONE)) THEN
+              TERM1 = TWO*GFFIB-CELENT*ABS(STRANT(1))
+     1		  *(SIGCL**2)/ABS(STRESS(1))
+	 		  TERM2 = TWO*GFFIB*(ONE+SIGCL/STRESS(1))
+	 		  TERM3 = TWO*GFFIB*(ONE-SIGCL*CDTHREE(1,1)/STRESS(1)**TWO)
+	 		  TERM4 = CELENT*SIGCL**TWO*(ONE/STRESS(1)
+     1	    	  -STRANT(1)*CDTHREE(1,1)/STRESS(1)**TWO)
+		  	  DDFDE(1) = (TERM3*TERM1+TERM4*TERM2)/TERM1**TWO
+			  
+	 		  TERM1 = TWO*GFFIB-CELENT*ABS(STRANT(1))
+     1		  *(SIGCL**2)/ABS(STRESS(1))
+	 		  TERM2 = TWO*GFFIB*(ONE+SIGCL/STRESS(1))
+		 	  TERM3 = TWO*GFFIB*(ONE-SIGCL*CDTHREE(1,2)/STRESS(1)**TWO)
+		  	  TERM4 = CELENT*SIGCL**TWO*(
+     1	    	  -STRANT(1)*CDTHREE(1,2)/STRESS(1)**TWO)
+		 	  DDFDE(2) = (TERM3*TERM1+TERM4*TERM2)/TERM1**TWO
+			  
+		 	  TERM1 = TWO*GFFIB-CELENT*ABS(STRANT(1))
+     1		  *(SIGCL**2)/ABS(STRESS(1))
+	 		  TERM2 = TWO*GFFIB*(ONE+SIGCL/STRESS(1))
+		 	  TERM3 = TWO*GFFIB*(ONE-SIGCL*CDTHREE(1,3)/STRESS(1)**TWO)
+		  	  TERM4 = CELENT*SIGCL**TWO*(
+     1	    	  -STRANT(1)*CDTHREE(1,3)/STRESS(1)**TWO)
+		 	  DDFDE(4) = (TERM3*TERM1+TERM4*TERM2)/TERM1**TWO
+	       ELSE IF(DF .GE. ONE )THEN
+		      DF = ONE
+		  	  DDFDE(1) = ZERO
+	 		  DDFDE(2) = ZERO
+	   	      DDFDE(4) = ZERO
+           END IF
+      END IF
+	  
+      DF = MAX (DF,DFOLD)
+      RETURN
+      END
+C******************************************************************************
+C     SUBROUTINE TO EVALUATE THE DAMAGE AND THE
+c     DERIVATIVE************************
+C******************************************************************************
+      SUBROUTINE DamageEvaluationfiber(GF,CELENT,SIGL,D,STRESS1,STRANT1)
+C     CALCULATE DAMAGE VARIABLE
+      INCLUDE 'ABA_PARAM.INC'
+      PARAMETER (ONE = 1.D0,tol=1d-3, zero = 0.d0, TWO = 2.D0)
+      TERM1 = TWO*GF/(TWO*GF-CELENT*ABS(STRANT1)*(SIGL**2)/ABS(STRESS1))
+      D = TERM1*(ONE-SIGL/ABS(STRESS1))
+C     CALCULATE THE DERIVATIVE OF DAMAGE VARIABLE WITH RESPECT TO FAILURE
+C     RITERION
+      RETURN
+      END
+	  
+      SUBROUTINE DamageEvaluationmatrix(GF,CELENT,
+     1     SIGTT,SIGSLT,D,STRESS1,STRESS2,STRANT1,STRANT2)
+C     CALCULATE DAMAGE VARIABLE
+      INCLUDE 'ABA_PARAM.INC'
+      PARAMETER (ONE = 1.D0,tol=1d-3, zero = 0.d0, TWO = 2.D0)
+	  
+           TERM1 = (STRESS1 / SIGTT)**TWO  
+           TERM2 = (STRESS2 / SIGSLT)**TWO
+           TERM=TERM1+TERM2
+	  	   STRESSM = ABS(STRESS1)
+	 	   STRANTM = ABS(STRANT1)
+      D = TWO*GF*(TERM - SQRT(TERM))/
+     1       (TWO*GF*TERM-CELENT*(STRESSM*STRANTM + STRESS2*STRANT2))
+C     CALCULATE THE DERIVATIVE OF DAMAGE VARIABLE WITH RESPECT TO FAILURE
+C     RITERION
+      RETURN
+      END
+
+   	  SUBROUTINE DamageEvaluationmatrix2(GFMAT,CELENT,
+     1     SIGCT,SIGSLT,DM ,STRESS2,STRESS3,STRANT2,STRANT3)
+C     CALCULATE DAMAGE VARIABLE
+      INCLUDE 'ABA_PARAM.INC'
+      PARAMETER (ONE = 1.D0,tol=1d-3, zero = 0.d0, TWO = 2.D0)
+	  
+           GAMA = ((SIGCT/(TWO*SIGSLT))**TWO - ONE)*STRESS2/SIGCT
+           BETA = (STRESS2/ (TWO*SIGSLT))**TWO 
+     1	 	  + STRESS3**TWO / SIGSLT**TWO	
+           
+	 	   TERM3 = 8.D0*GFMAT*BETA**TWO - 
+     1	   	  4.D0*GFMAT*BETA*(SQRT(GAMA**TWO+4.D0*BETA)-GAMA)
+    	   TERM4 = 8.D0*GFMAT*BETA**TWO - CELENT*(ABS(STRESS2)
+     1	      *ABS(STRANT2)+STRESS3*STRANT3)*(TWO*GAMA**TWO+4.D0*BETA
+     2	   	  -TWO*GAMA*SQRT(GAMA**TWO+4.D0*BETA))
+ 	 	   DM = TERM3/TERM4
+C     CALCULATE THE DERIVATIVE OF DAMAGE VARIABLE WITH RESPECT TO FAILURE
+C     RITERION
+      RETURN
+      END
+	  
+C******************************************************************************
+C     SUBROUTINE TO CONDENSE THE 4X4 MATRIX INTO 3X3 MATRIX********************
+C******************************************************************************
+      SUBROUTINE MatrixCondense(CFULL,CTHREE)
+      INCLUDE 'ABA_PARAM.INC'
+      DIMENSION CFULL(6,6),CTHREE(3,3)
+C     
+      CTHREE(1,1) = CFULL(1,1) - CFULL(1,3) * CFULL(3,1) / CFULL(3,3)
+      CTHREE(1,2) = CFULL(1,2) - CFULL(1,3) * CFULL(3,2) / CFULL(3,3)
+      CTHREE(2,1) = CFULL(2,1) - CFULL(2,3) * CFULL(3,1) / CFULL(3,3)
+      CTHREE(2,2) = CFULL(2,2) - CFULL(2,3) * CFULL(3,2) / CFULL(3,3)
+      CTHREE(3,3) = CFULL(4,4)
+      RETURN
+      END
+C*******************************************************************************
+C     SUBROUTINE TO GET THE DERIVATIVE MATRIX OF CONDENSE DAMAGED MATRIX OVER
+C**** THE DAMAGE VARIABLE******************************************************
+C*******************************************************************************
+      SUBROUTINE ElasticDerivative(CFULL,DMV,DFV, DCDDM,DCDDF)
+      INCLUDE 'ABA_PARAM.INC'
+      DIMENSION CFULL(6,6), DCDDM(6,6),
+     1     DCDDF(6,6)
+      PARAMETER (ZERO = 0.D0, ONE = 1.D0, HALF = 0.5D0)
+C     initialize the data to zero
+      DO I = 1, 6
+         DO J = 1, 6
+            DCDDM(I,J) = ZERO
+            DCDDF(I,J) = ZERO
+         END DO
+      END DO
+C     
+C     CALCULATE DC/DDF
+C     
+      DCDDF(1,1) = - CFULL(1,1)
+      DCDDF(1,2) = - (ONE - DMV) * CFULL(1,2)
+      DCDDF(2,1) = DCDDF(1,2)
+      DCDDF(1,3) = -CFULL(1,3)
+      DCDDF(3,1) = DCDDF(1,3)
+      DCDDF(4,4) = -(ONE - DMV) * CFULL(4,4)
+C     
+C     CALCULATE DC/DDM
+C     
+      DCDDM(1,2) = - (ONE - DFV) * CFULL(1,2)
+      DCDDM(2,1) = DCDDM(1,2)
+      DCDDM(2,2) = -CFULL(2,2)
+      DCDDM(2,3) = -CFULL(2,3)
+      DCDDM(3,2) = DCDDM(2,3)
+      DCDDM(4,4) = -(ONE - DFV) * CFULL(4,4)
+      RETURN
+      END
+      
