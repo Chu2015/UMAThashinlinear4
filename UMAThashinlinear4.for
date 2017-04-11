@@ -654,17 +654,34 @@ C******************************************************************************
 C     SUBROUTINE TO EVALUATE THE DAMAGE AND THE
 c     DERIVATIVE************************
 C******************************************************************************
+   
+C************************FT******************************
       SUBROUTINE DamageEvaluationfiber(GF,CELENT,SIGL,D,STRESS1,STRANT1)
 C     CALCULATE DAMAGE VARIABLE
       INCLUDE 'ABA_PARAM.INC'
       PARAMETER (ONE = 1.D0,tol=1d-3, zero = 0.d0, TWO = 2.D0)
-      TERM1 = TWO*GF/(TWO*GF-CELENT*ABS(STRANT1)*(SIGL**2)/ABS(STRESS1))
+      TERM1 = TWO*GF/(TWO*GF-CELENT*macauley(STRANT1)*(SIGL**2)
+  	  1   /ABS(STRESS1))
       D = TERM1*(ONE-SIGL/ABS(STRESS1))
 C     CALCULATE THE DERIVATIVE OF DAMAGE VARIABLE WITH RESPECT TO FAILURE
 C     RITERION
       RETURN
       END
-	  
+
+C************************FC******************************	  
+   	  SUBROUTINE DamageEvaluationfiber2(GF,CELENT,SIGL,D,STRESS1,STRANT1)
+C     CALCULATE DAMAGE VARIABLE
+      INCLUDE 'ABA_PARAM.INC'
+      PARAMETER (ONE = 1.D0,tol=1d-3, zero = 0.d0, TWO = 2.D0)
+      TERM1 = TWO*GF/(TWO*GF-CELENT*macauley(-STRANT1)*(SIGL**2)
+     1   /ABS(STRESS1))
+      D = TERM1*(ONE-SIGL/ABS(STRESS1))
+C     CALCULATE THE DERIVATIVE OF DAMAGE VARIABLE WITH RESPECT TO FAILURE
+C     RITERION
+      RETURN
+      END
+
+C************************MT******************************	  
       SUBROUTINE DamageEvaluationmatrix(GF,CELENT,
      1     SIGTT,SIGSLT,D,STRESS1,STRESS2,STRANT1,STRANT2)
 C     CALCULATE DAMAGE VARIABLE
@@ -675,28 +692,31 @@ C     CALCULATE DAMAGE VARIABLE
            TERM2 = (STRESS2 / SIGSLT)**TWO
            TERM=TERM1+TERM2
 	  	   STRESSM = ABS(STRESS1)
-	 	   STRANTM = ABS(STRANT1)
+	 	   STRANTM = macauley(STRANT1)
       D = TWO*GF*(TERM - SQRT(TERM))/
      1       (TWO*GF*TERM-CELENT*(STRESSM*STRANTM + STRESS2*STRANT2))
 C     CALCULATE THE DERIVATIVE OF DAMAGE VARIABLE WITH RESPECT TO FAILURE
 C     RITERION
       RETURN
       END
-
+	  
+C************************MC******************************
    	  SUBROUTINE DamageEvaluationmatrix2(GFMAT,CELENT,
      1     SIGCT,SIGSLT,DM ,STRESS2,STRESS3,STRANT2,STRANT3)
 C     CALCULATE DAMAGE VARIABLE
       INCLUDE 'ABA_PARAM.INC'
       PARAMETER (ONE = 1.D0,tol=1d-3, zero = 0.d0, TWO = 2.D0)
-	  
+ 		   STRESSM = ABS(STRESS2)
+	 	   STRANTM = macauley(-STRANT2)
+		   
            GAMA = ((SIGCT/(TWO*SIGSLT))**TWO - ONE)*STRESS2/SIGCT
            BETA = (STRESS2/ (TWO*SIGSLT))**TWO 
      1	 	  + STRESS3**TWO / SIGSLT**TWO	
            
 	 	   TERM3 = 8.D0*GFMAT*BETA**TWO - 
      1	   	  4.D0*GFMAT*BETA*(SQRT(GAMA**TWO+4.D0*BETA)-GAMA)
-    	   TERM4 = 8.D0*GFMAT*BETA**TWO - CELENT*(ABS(STRESS2)
-     1	      *ABS(STRANT2)+STRESS3*STRANT3)*(TWO*GAMA**TWO+4.D0*BETA
+    	   TERM4 = 8.D0*GFMAT*BETA**TWO - CELENT*(STRESSM
+     1	      *STRANTM+STRESS3*STRANT3)*(TWO*GAMA**TWO+4.D0*BETA
      2	   	  -TWO*GAMA*SQRT(GAMA**TWO+4.D0*BETA))
  	 	   DM = TERM3/TERM4
 C     CALCULATE THE DERIVATIVE OF DAMAGE VARIABLE WITH RESPECT TO FAILURE
@@ -755,3 +775,9 @@ C
       RETURN
       END
       
+   	  FUNCTION macauley(x) RESULT(m)
+  	   REAL m,x
+  	   m = (ABS(x)+x)/2
+   	  END FUNCTION macauley
+	   
+	  
