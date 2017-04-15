@@ -814,6 +814,7 @@ C
       END
       
    	  FUNCTION macauley(x) RESULT(m)
+	  INCLUDE 'ABA_PARAM.INC'
   	   REAL m,x
   	   m = (ABS(x)+x)/2
    	  END FUNCTION macauley
