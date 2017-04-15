@@ -517,7 +517,7 @@ C     CALCULATE DDMDE
      7     +4.D0*BETA))*TERM2))
 		  		ELSE IF(STRANT(2) .GE. ZERO) THEN
    		  TERM6 = 16.D0*GFMAT*BETA*TERM1-CELENT*(
-   	 1	   CDTHREE(3,2)*STRANT(3)
+     1	   CDTHREE(3,2)*STRANT(3)
      2     *(TWO*GAMA**TWO+4.D0*BETA-TWO*GAMA*
      3     SQRT(GAMA**TWO+4.D0*BETA))+(ABS(STRESS(2))
      4     *ABS(STRANT(2))+STRESS(3)*STRANT(3))*((ONE-GAMA/
@@ -692,12 +692,13 @@ c     DERIVATIVE************************
 C******************************************************************************
    
 C************************FT******************************
-      SUBROUTINE DamageEvaluationfiber(GF,CELENT,SIGL,D,STRESS1,STRANT1)
+      SUBROUTINE DamageEvaluationfiber(GF,CELENT,SIGL,D,
+     1    STRESS1,STRANT1)
 C     CALCULATE DAMAGE VARIABLE
       INCLUDE 'ABA_PARAM.INC'
       PARAMETER (ONE = 1.D0,tol=1d-3, zero = 0.d0, TWO = 2.D0)
       TERM1 = TWO*GF/(TWO*GF-CELENT*macauley(STRANT1)*(SIGL**2)
-  	  1   /ABS(STRESS1))
+     1   /ABS(STRESS1))
       D = TERM1*(ONE-SIGL/ABS(STRESS1))
 C     CALCULATE THE DERIVATIVE OF DAMAGE VARIABLE WITH RESPECT TO FAILURE
 C     RITERION
@@ -705,7 +706,8 @@ C     RITERION
       END
 
 C************************FC******************************	  
-   	  SUBROUTINE DamageEvaluationfiber2(GF,CELENT,SIGL,D,STRESS1,STRANT1)
+      SUBROUTINE DamageEvaluationfiber2(GF,CELENT,SIGL,D,
+     1    STRESS1,STRANT1)
 C     CALCULATE DAMAGE VARIABLE
       INCLUDE 'ABA_PARAM.INC'
       PARAMETER (ONE = 1.D0,tol=1d-3, zero = 0.d0, TWO = 2.D0)
