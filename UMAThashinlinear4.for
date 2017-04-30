@@ -250,7 +250,7 @@ C     TO COMPUTE THE INTERNAL ENERGY WITHOUT VISCOUS REGULARIZATION
       END DO
       
       RETURN
-      END
+      END SUBROUTINE
       
 C******************************************************************************
 C CALCULATE THE STRESS BASED ON THE DAMAGE VARAIBLES***************************
@@ -312,7 +312,7 @@ C
          END DO
       END IF 
       RETURN
-      END
+      END SUBROUTINE
 C******************************************************************************
 C     TO CHECK THE FAILURE INITIATION AND THE CORRESPONDING DERIVATIVE*********
 C******************************************************************************
@@ -685,7 +685,7 @@ C     CALCULATE DDFDE
 	  
       DF = MAX (DF,DFOLD)
       RETURN
-      END
+      END SUBROUTINE
 C******************************************************************************
 C     SUBROUTINE TO EVALUATE THE DAMAGE AND THE
 c     DERIVATIVE************************
@@ -703,7 +703,7 @@ C     CALCULATE DAMAGE VARIABLE
 C     CALCULATE THE DERIVATIVE OF DAMAGE VARIABLE WITH RESPECT TO FAILURE
 C     RITERION
       RETURN
-      END
+      END SUBROUTINE
 
 C************************FC******************************	  
       SUBROUTINE DamageEvaluationfiber2(GF,CELENT,SIGL,D,
@@ -717,7 +717,7 @@ C     CALCULATE DAMAGE VARIABLE
 C     CALCULATE THE DERIVATIVE OF DAMAGE VARIABLE WITH RESPECT TO FAILURE
 C     RITERION
       RETURN
-      END
+      END SUBROUTINE
 
 C************************MT******************************	  
       SUBROUTINE DamageEvaluationmatrix(GF,CELENT,
@@ -736,10 +736,10 @@ C     CALCULATE DAMAGE VARIABLE
 C     CALCULATE THE DERIVATIVE OF DAMAGE VARIABLE WITH RESPECT TO FAILURE
 C     RITERION
       RETURN
-      END
+      END SUBROUTINE
 	  
 C************************MC******************************
-   	  SUBROUTINE DamageEvaluationmatrix2(GFMAT,CELENT,
+      SUBROUTINE DamageEvaluationmatrix2(GFMAT,CELENT,
      1     SIGCT,SIGSLT,DM ,STRESS2,STRESS3,STRANT2,STRANT3)
 C     CALCULATE DAMAGE VARIABLE
       INCLUDE 'ABA_PARAM.INC'
@@ -760,7 +760,7 @@ C     CALCULATE DAMAGE VARIABLE
 C     CALCULATE THE DERIVATIVE OF DAMAGE VARIABLE WITH RESPECT TO FAILURE
 C     RITERION
       RETURN
-      END
+      END SUBROUTINE
 	  
 C******************************************************************************
 C     SUBROUTINE TO CONDENSE THE 4X4 MATRIX INTO 3X3 MATRIX********************
@@ -775,7 +775,7 @@ C
       CTHREE(2,2) = CFULL(2,2) - CFULL(2,3) * CFULL(3,2) / CFULL(3,3)
       CTHREE(3,3) = CFULL(4,4)
       RETURN
-      END
+      END SUBROUTINE
 C*******************************************************************************
 C     SUBROUTINE TO GET THE DERIVATIVE MATRIX OF CONDENSE DAMAGED MATRIX OVER
 C**** THE DAMAGE VARIABLE******************************************************
@@ -811,12 +811,12 @@ C
       DCDDM(3,2) = DCDDM(2,3)
       DCDDM(4,4) = -(ONE - DFV) * CFULL(4,4)
       RETURN
-      END
+      END SUBROUTINE
       
-   	  FUNCTION macauley(x) RESULT(m)
-	  INCLUDE 'ABA_PARAM.INC'
-  	   REAL m,x
-  	   m = (ABS(x)+x)/2
-   	  END FUNCTION macauley
+      FUNCTION macauley(x) RESULT(m)
+      INCLUDE 'ABA_PARAM.INC'
+      REAL m,x
+      m = (ABS(x)+x)/2
+      END FUNCTION macauley
 	   
 	  
