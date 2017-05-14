@@ -21,6 +21,7 @@ C
       DIMENSION ATEMP1(6), ATEMP2(6), TDDSDDE(6,6)
       DIMENSION OLD_STRESS(6),C_STRESS(3)
       DIMENSION DOLD_STRESS(6),D_STRESS(6)
+      REAL macauley
       PARAMETER (ZERO = 0.D0,ONE = 1.D0,TWO = 2.D0, HALF = 0.5D0)
 C****************************
 C     STRANT..... STRAIN AT THE END OF THE INCREMENT
@@ -325,6 +326,7 @@ C******************************************************************************
       DIMENSION STRESS(NTENS)
       PARAMETER (ZERO = 0.D0, ONE = 1.D0, TWO = 2.D0, 
      1     HALF = 0.5D0, FOUR = 4.D0)
+      REAL macauley
 C     
 C     CHECK THE INITIATION CONDITION FOR MATRIX
 C     FMN=FM/EPITT > 1 THEN EVALUATE THE DAMAGE VARIABLE AND DERIVATIVE
@@ -332,6 +334,10 @@ C
   	   CALL GetStress(CFULL,CDFULL,DFOLD,DMOLD,STRESS,STRANT,NDI,NTENS)
   	   CALL MatrixCondense(CDFULL,CDTHREE)
 	   
+  	   open (16, FILE='D:\AbaqusTest2.txt', STATUS='OLD',action='write',
+     1      POSITION='APPEND')
+C  	   write(16,*)"STRESS"
+C  	   write(16,"(3(1x,f16.5))") STRESS
    	  IF(STRESS(2) .GT. ZERO) THEN
     	  TERM1 = (STRESS(2))**TWO / SIGTT**TWO  		
 	      IF (NDI .EQ. 3) THEN
@@ -352,7 +358,8 @@ C
    	  ELSE
 	   	  FMN = ZERO
    	  END IF
-   	  
+C   	   write(16,*)"FMN"
+C  	   write(16,*) FMN
 C
 C     INITIALIZE THE ARRAY AND VARIABLE
 C
@@ -375,7 +382,7 @@ C     CALCULATE DM
    			CALL DamageEvaluationmatrix(GFMAT,CELENT,
      1     SIGTT,SIGSLT,DM ,STRESS(2),STRESS(3),STRANT(2),STRANT(3))
      	END IF
-	        
+   
 C     CALCULATE DDMDE
          IF ((DM .GT. DMOLD) .AND. (DM .LT. ONE)) THEN
 	   	    STRANTM = macauley(STRANT(2))
@@ -697,6 +704,7 @@ C************************FT******************************
 C     CALCULATE DAMAGE VARIABLE
       INCLUDE 'ABA_PARAM.INC'
       PARAMETER (ONE = 1.D0,tol=1d-3, zero = 0.d0, TWO = 2.D0)
+      REAL macauley
       TERM1 = TWO*GF/(TWO*GF-CELENT*macauley(STRANT1)*(SIGL**2)
      1   /ABS(STRESS1))
       D = TERM1*(ONE-SIGL/ABS(STRESS1))
@@ -711,6 +719,7 @@ C************************FC******************************
 C     CALCULATE DAMAGE VARIABLE
       INCLUDE 'ABA_PARAM.INC'
       PARAMETER (ONE = 1.D0,tol=1d-3, zero = 0.d0, TWO = 2.D0)
+      REAL macauley
       TERM1 = TWO*GF/(TWO*GF-CELENT*macauley(-STRANT1)*(SIGL**2)
      1   /ABS(STRESS1))
       D = TERM1*(ONE-SIGL/ABS(STRESS1))
@@ -725,7 +734,7 @@ C************************MT******************************
 C     CALCULATE DAMAGE VARIABLE
       INCLUDE 'ABA_PARAM.INC'
       PARAMETER (ONE = 1.D0,tol=1d-3, zero = 0.d0, TWO = 2.D0)
-	  
+      REAL macauley
            TERM1 = (STRESS1 / SIGTT)**TWO  
            TERM2 = (STRESS2 / SIGSLT)**TWO
            TERM=TERM1+TERM2
@@ -733,6 +742,8 @@ C     CALCULATE DAMAGE VARIABLE
 	 	   STRANTM = macauley(STRANT1)
       D = TWO*GF*(TERM - SQRT(TERM))/
      1       (TWO*GF*TERM-CELENT*(STRESSM*STRANTM + STRESS2*STRANT2))
+      write(16,*)"DM，STRANTM，STRESSM，TERM"
+      write(16,"(3(1x,f16.5))") D,STRANTM,STRESSM,TERM
 C     CALCULATE THE DERIVATIVE OF DAMAGE VARIABLE WITH RESPECT TO FAILURE
 C     RITERION
       RETURN
@@ -744,6 +755,7 @@ C************************MC******************************
 C     CALCULATE DAMAGE VARIABLE
       INCLUDE 'ABA_PARAM.INC'
       PARAMETER (ONE = 1.D0,tol=1d-3, zero = 0.d0, TWO = 2.D0)
+      REAL macauley
  		   STRESSM = ABS(STRESS2)
 	 	   STRANTM = macauley(-STRANT2)
 		   
@@ -768,6 +780,7 @@ C******************************************************************************
       SUBROUTINE MatrixCondense(CFULL,CTHREE)
       INCLUDE 'ABA_PARAM.INC'
       DIMENSION CFULL(6,6),CTHREE(3,3)
+      REAL macauley
 C     
       CTHREE(1,1) = CFULL(1,1) - CFULL(1,3) * CFULL(3,1) / CFULL(3,3)
       CTHREE(1,2) = CFULL(1,2) - CFULL(1,3) * CFULL(3,2) / CFULL(3,3)
@@ -784,6 +797,7 @@ C*******************************************************************************
       INCLUDE 'ABA_PARAM.INC'
       DIMENSION CFULL(6,6), DCDDM(6,6),
      1     DCDDF(6,6)
+      REAL macauley
       PARAMETER (ZERO = 0.D0, ONE = 1.D0, HALF = 0.5D0)
 C     initialize the data to zero
       DO I = 1, 6
@@ -813,10 +827,17 @@ C
       RETURN
       END SUBROUTINE
       
-      FUNCTION macauley(x) RESULT(m)
-      INCLUDE 'ABA_PARAM.INC'
-      REAL m,x
-      m = (ABS(x)+x)/2
-      END FUNCTION macauley
+      REAL FUNCTION macauley(x)
+      INCLUDE 'ABA_PARAM.INC'    
+      macauley = (ABS(x)+x)/2
+     	write(16,*)"macauley"
+      write(16,*)macauley
+      END FUNCTION
 	   
-	  
+c     FUNCTION macauley(x) RESULT(m)
+c      INCLUDE 'ABA_PARAM.INC'  
+c      REAL m,x
+c      m = (ABS(x)+x)/2
+c     	write(16,*)"macauley"
+c      write(16,*)m
+c      END FUNCTION macauley	  
