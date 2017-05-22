@@ -334,8 +334,8 @@ C
   	   CALL GetStress(CFULL,CDFULL,DFOLD,DMOLD,STRESS,STRANT,NDI,NTENS)
   	   CALL MatrixCondense(CDFULL,CDTHREE)
 	   
-  	   open (16, FILE='D:\AbaqusTest2.txt', STATUS='OLD',action='write',
-     1      POSITION='APPEND')
+c  	   open (16, FILE='D:\AbaqusTest2.txt', STATUS='OLD',action='write',
+c     1      POSITION='APPEND')
 C  	   write(16,*)"STRESS"
 C  	   write(16,"(3(1x,f16.5))") STRESS
    	  IF(STRESS(2) .GT. ZERO) THEN
