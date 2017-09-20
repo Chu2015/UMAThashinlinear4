@@ -306,8 +306,8 @@ C******************************************************************************
      2     DFOLD,DMOLD, NDI )
       INCLUDE 'ABA_PARAM.INC'
       DIMENSION DDFDE(6), DDMDE(6), STRANT(6), CFULL(6,6)
-      PARAMETER (ZERO = 0.D0, ONE = 1.D0, TWO = 2.D0, 
-     1     HALF = 0.5D0, FOUR = 4.D0)
+	  DIMENSION DFMNDE(6), DFFNDE(6)
+      PARAMETER (ZERO = 0.D0, ONE = 1.D0, TWO = 2.D0, HALF = 0.5D0)
 C     
 C     CHECK THE INITIATION CONDITION FOR MATRIX
 C     FMN=FM/EPITT > 1 THEN EVALUATE THE DAMAGE VARIABLE AND DERIVATIVE
