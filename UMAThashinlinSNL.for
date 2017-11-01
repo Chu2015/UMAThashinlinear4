@@ -50,7 +50,7 @@ C     GET THE MATERIAL PROPERTIES---ENGINEERING CONSTANTS
 C
       TENL = PROPS(1)           !YOUNG'S MODULUS IN DIRECTION 1 (L)
       TENT = PROPS(2)           !YOUNG'S MODULUS IN DIRECTION 2 (T)
-      SHRLT = PROPS(3)          !SHEAR MODULUS IN 12 PLANE
+      SHRLT2 = PROPS(3)          !SHEAR MODULUS IN 12 PLANE
       SHRTT = PROPS(4)          !SHEAR MODULUS IN 23 PLANE
       XNULT = PROPS(5)          !POISON'S RATIO POI_12
       XNUTT = PROPS(6)          !POISON'S RATIO POI_23
@@ -77,11 +77,11 @@ C
 C     shear nonlinearity
       DFOLD = STATEV(1)
       DMOLD = STATEV(2)
-   	  IF (DMOLD .GT. ZERO) THEN
-	      SHRLT = STATEV(14) 
-   	  ELSE THEN
-   	      SHRLT = SHRLT /((1+(SHRLT*STRANT(3)/SIGSLT)**2)**(1/2))
-   	  END IF 
+      IF (DMOLD .LE. ZERO) THEN
+		SHRLT = SHRLT2 /((1+(SHRLT2*STRANT(3)/SIGSLT)**2)**(1/2))       
+      ELSE
+        SHRLT = STATEV(14) 
+      END IF 
 c     
 C     FILL THE 6X6 FULL STIFFNESS MATRIX
       DO I = 1, 6
