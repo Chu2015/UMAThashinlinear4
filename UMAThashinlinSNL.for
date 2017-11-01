@@ -75,8 +75,13 @@ C
       END DO
 
 C     shear nonlinearity
-   	  SHRLT = SHRLT /((1+(SHRLT*STRANT(3)/SIGSLT)**2)**(1/2))
-   	  
+      DFOLD = STATEV(1)
+      DMOLD = STATEV(2)
+   	  IF (DMOLD .GT. ZERO) THEN
+	      SHRLT = STATEV(14) 
+   	  ELSE THEN
+   	      SHRLT = SHRLT /((1+(SHRLT*STRANT(3)/SIGSLT)**2)**(1/2))
+   	  END IF 
 c     
 C     FILL THE 6X6 FULL STIFFNESS MATRIX
       DO I = 1, 6
@@ -109,14 +114,11 @@ c calculate the failure strain by failure stress
 C     
 C     CHECK THE FAILURE INITIATION CONDITION
 c     
-      DFOLD = STATEV(1)
-      DMOLD = STATEV(2)
       DFVOLD = STATEV(3)
       DMVOLD = STATEV(4)
       DDMDE2 = STATEV(11)  
       DDMDE4 = STATEV(12)
       DDFDE1 = STATEV(13) 
-	  
 	  
       CALL CheckFailureIni(EPITL,EPICL,EPITT,EPICT,EPISLT,STRANT,
      1     GFMAT,GFFIB, CELENT, CFULL, DF, DM, DDFDE, DDMDE, NTENS,
@@ -228,6 +230,7 @@ C
       STATEV(11) = DDMDE(2)
       STATEV(12) = DDMDE(4)
       STATEV(13) = DDFDE(1)
+   	  STATEV(14) = SHRLT
 C     
 C     TO COMPUTE THE ENERGY
 C     
