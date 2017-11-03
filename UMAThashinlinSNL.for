@@ -77,11 +77,19 @@ C
 C     shear nonlinearity
       DFOLD = STATEV(1)
       DMOLD = STATEV(2)
+
       IF (DMOLD .LE. ZERO) THEN
-		SHRLT = SHRLT2 /((1+(SHRLT2*STRANT(3)/SIGSLT)**2)**(1/2))       
+      	SHRLT = SHRLT2 /sqrt((1+(SHRLT2*STRANT(3)/SIGSLT)**2))       
       ELSE
         SHRLT = STATEV(14) 
       END IF 
+
+C   	  open (16, FILE='D:\AbaqusTest.txt', STATUS='OLD',action='write',
+c     1      POSITION='APPEND')
+c   	  write(16,*) "DMOLD"
+c   	  write(16,*) DMOLD
+c   	  write(16,*) "SHRLT"
+c   	  write(16,*) SHRLT
 c     
 C     FILL THE 6X6 FULL STIFFNESS MATRIX
       DO I = 1, 6
