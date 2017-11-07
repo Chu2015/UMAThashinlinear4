@@ -79,7 +79,7 @@ C     shear nonlinearity
       DMOLD = STATEV(2)
 
       IF (DMOLD .LE. ZERO) THEN
-      	SHRLT = SHRLT2 /sqrt(1+(SHRLT2*STRANT(3)/SIGSLT)**2)      
+      	SHRLT = SHRLT2 /(1+SHRLT2*STRANT(3)/SIGSLT)       
       ELSE
         SHRLT = STATEV(14) 
       END IF 
