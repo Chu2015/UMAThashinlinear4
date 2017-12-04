@@ -224,6 +224,7 @@ C
       STATEV(2) = DM
       STATEV(3) = DFV
       STATEV(4) = DMV
+   	  STATEV(14) = SHRLT
 C     
 C     TO COMPUTE THE ENERGY
 C     
