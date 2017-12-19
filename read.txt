@@ -1,0 +1,3 @@
+UMAThasinlinear3是使用hashin准则+线性退化
+UMAThasinlinear6是使用hashin准则+指数退化
+SNL=Shear nolinear ，N是shape parameter
