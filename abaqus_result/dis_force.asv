@@ -1,0 +1,15 @@
+figure(1);
+%plot(X1,Force1,X2,Force2,X3,Force3,X4,Force4,'b');
+%plot(X,u1f1,X2,u2f2,X3,u3f3,'b');
+a = plot(u_60,f1,'r');hold on;
+b = plot(u2,f2,'g');hold on;
+c = plot(u3,f3,'b');hold on;
+%d = plot(u4,f4,'b');hold on;
+%e = plot(u5,f5,'b');hold on;
+%f = plot(u6,f6,'b');hold on;
+
+legend([a,b,c],'1','100','0.001');
+grid on;
+xlabel('Œª“∆(mm)');
+ylabel('‘ÿ∫…(N)');
+axis([0 4 0 140000]);
