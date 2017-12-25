@@ -1,0 +1,1 @@
+60_I_hashin,80_I_hashin,100_I_hashin 三个文件夹中的计算结果，如果没有inp文件，说明是S=60，G=0.5&60，Den=1。
