@@ -16,7 +16,8 @@ figure(1);
 %  dd = plot(u_80_45_exp,f_80_45_exp,':b','LineWidth',3);hold on;
  ee = plot(u_80_0_90_lin,f_80_0_90_lin,'b','LineWidth',3);hold on;
  ff = plot(u_80_0_90_exp,f_80_0_90_exp,':b','LineWidth',3);hold on;
-   
+  ee2 = plot(u_80_0_90_lin_new,f_80_0_90_lin_new,'--b','LineWidth',3);hold on;
+ 
 %  aaa = plot(u_100_0_lin,f_100_0_lin,'k','LineWidth',3);hold on;
 %  bbb = plot(u_100_0_exp,f_100_0_exp,':k','LineWidth',3);hold on;
 %  aaaa = plot(u_100_0_lin_2_5,f_100_0_lin_2_5,'--k','LineWidth',3);hold on;
@@ -26,7 +27,7 @@ figure(1);
  fff = plot(u_100_0_90_exp,f_100_0_90_exp,':k','LineWidth',3);hold on;
    
 % legend([a,b,aa,bb,aa2,aaa,bbb,aaaa],'60-0-lin','60-0-exp','80-0-lin','80-0-exp','80-0-lin-new','100-0-lin','100-0-exp','100-0-lin-Gm_2_._5');
- legend([e,f,ee,ff,eee,fff],'60-0-90-lin','60-0-90-exp','80-0-90-lin','80-0-90-exp','100-0-90-lin','100-0-90-exp');
+ legend([e,f,ee,ff,ee2,eee,fff],'60-0-90-lin','60-0-90-exp','80-0-90-lin','80-0-90-exp','80-0-90-lin-new','100-0-90-lin','100-0-90-exp');
 % legend([c,d,cc,dd,ccc,ddd],'60-45-lin','60-45-exp','80-45-lin','80-45-exp','100-45-lin','100-45-exp');
  grid on
  xlabel('Î»ÒÆ(mm)');
