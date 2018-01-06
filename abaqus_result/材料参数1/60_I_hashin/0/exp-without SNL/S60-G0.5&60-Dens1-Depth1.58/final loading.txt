@@ -1,0 +1,4 @@
+ MINIMUM        0.                -0.         
+  AT X =                           0.         
+ MAXIMUM        4.               113.459E+03  
+  AT X =                           1.04951   
