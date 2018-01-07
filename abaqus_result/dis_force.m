@@ -7,7 +7,7 @@ figure(1);
 %   c = plot(u_60_45_lin,f_60_45_lin,'r','LineWidth',3);hold on;
 %   d = plot(u_60_45_exp,f_60_45_exp,':r','LineWidth',3);hold on;
  e = plot(u_60_0_90_lin,f_60_0_90_lin,'r','LineWidth',3);hold on;
-%  f = plot(u_60_0_90_exp,f_60_0_90_exp,':r','LineWidth',3);hold on;
+ f = plot(u_60_0_90_exp,f_60_0_90_exp,':r','LineWidth',3);hold on;
 
 %  aa = plot(u_80_0_lin,f_80_0_lin,'b','LineWidth',3);hold on;
 %  bb = plot(u_80_0_exp,f_80_0_exp,':b','LineWidth',3);hold on;
@@ -15,7 +15,7 @@ figure(1);
 %  cc = plot(u_80_45_lin,f_80_45_lin,'b','LineWidth',3);hold on;
 %  dd = plot(u_80_45_exp,f_80_45_exp,':b','LineWidth',3);hold on;
  ee = plot(u_80_0_90_lin,f_80_0_90_lin,'b','LineWidth',3);hold on;
-%  ff = plot(u_80_0_90_exp,f_80_0_90_exp,':b','LineWidth',3);hold on;
+ ff = plot(u_80_0_90_exp,f_80_0_90_exp,':b','LineWidth',3);hold on;
 %   ee2 = plot(u_80_0_90_lin_new,f_80_0_90_lin_new,'--b','LineWidth',3);hold on;
  
 %  aaa = plot(u_100_0_lin,f_100_0_lin,'k','LineWidth',3);hold on;
@@ -24,10 +24,10 @@ figure(1);
 %  ccc = plot(u_100_45_lin,f_100_45_lin,'k','LineWidth',3);hold on;
 %  ddd = plot(u_100_45_exp,f_100_45_exp,':k','LineWidth',3);hold on;
  eee = plot(u_100_0_90_lin,f_100_0_90_lin,'k','LineWidth',3);hold on;
-%  fff = plot(u_100_0_90_exp,f_100_0_90_exp,':k','LineWidth',3);hold on;
+ fff = plot(u_100_0_90_exp,f_100_0_90_exp,':k','LineWidth',3);hold on;
    
 % legend([a,b,aa,bb,aaa,bbb],'直径60-linear','直径60-exponential','直径80-linear','直径80-exponential','直径100-linear','直径100-exponential');
-  legend([e,ee,eee],'60-0-90-lin','80-0-90-lin','100-0-90-lin');
+  legend([e,f,ee,ff,eee,fff],'60-0-90-lin','60-0-90-exp','80-0-90-lin','80-0-90-exp','100-0-90-lin','100-0-90-exp');
 % legend([c,d,cc,dd,ccc,ddd],'60-45-lin','60-45-exp','80-45-lin','80-45-exp','100-45-lin','100-45-exp');
  grid on
  xlabel('位移(mm)');
