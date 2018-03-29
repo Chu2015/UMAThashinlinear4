@@ -34,15 +34,15 @@ for i=1:M
 end
 figure(1)
 dl60=plot(ss,Force,'r','LineWidth',3);
-legend([dl60],'[0]10-H100mm-Expt.');
-xlim([0,1.1*max(ss)])
-ylim([0,1.1*Max_f])
-ylabel('Load(kN)','FontName','Times New Roman','fontsize',24)
-xlabel('Displacement(mm)','FontName','Times New Roman','fontsize',24)
-h=legend('Load-Displacement Curve',2);
-set(gca,'FontName','Times New Roman','fontsize',24)
-set(h,'FontName','Times New Roman','fontsize',24)
-set(h, 'Box', 'off')
+% legend([dl60],'[0]10-H100mm-Expt.');
+% xlim([0,1.1*max(ss)])
+% ylim([0,1.1*Max_f])
+% ylabel('Load(kN)','FontName','Times New Roman','fontsize',24)
+% xlabel('Displacement(mm)','FontName','Times New Roman','fontsize',24)
+% h=legend('Load-Displacement Curve',2);
+% set(gca,'FontName','Times New Roman','fontsize',24)
+% set(h,'FontName','Times New Roman','fontsize',24)
+% set(h, 'Box', 'off')
 grid on
 hold on
 
@@ -70,14 +70,14 @@ for i=1:M2
     ss2(i)=mean(s2((i-1)*h2+1:i*h2));
 end
 dl80=plot(ss2,Force2,'k','LineWidth',3);
-xlim([0,1.1*max(ss2)])
-ylim([0,1.15*max(Force2)])
-ylabel('Load(kN)','FontName','Times New Roman','fontsize',24)
-xlabel('Displacement(mm)','FontName','Times New Roman','fontsize',24)
-h=legend('Load-Displacement Curve',2);
-set(gca,'FontName','Times New Roman','fontsize',24)
-set(h,'FontName','Times New Roman','fontsize',24)
-set(h, 'Box', 'off')
+% xlim([0,1.1*max(ss2)])
+% ylim([0,1.15*max(Force2)])
+% ylabel('Load(kN)','FontName','Times New Roman','fontsize',24)
+% xlabel('Displacement(mm)','FontName','Times New Roman','fontsize',24)
+% h=legend('Load-Displacement Curve',2);
+% set(gca,'FontName','Times New Roman','fontsize',24)
+% set(h,'FontName','Times New Roman','fontsize',24)
+% set(h, 'Box', 'off')
 grid on
 hold on
 
@@ -103,7 +103,7 @@ for i=1:M3
     ss3(i)=mean(s3((i-1)*h3+1:i*h3));
 end
 dl100=plot(ss3,Force3,'b','LineWidth',3);
-legend([dl60,dl80,dl100],'[0]_1_0-H60mm-Expt.','[0]_1_0-H80mm-Expt.','[0]_1_0-H100mm-Expt.');
+legend([dl60,dl80,dl100],'[0]_1_0-H100mm-Expt.','[0]_1_0-H80mm-Expt.','[0]_1_0-H60mm-Expt.');
 xlim([0,1.1*max(ss3)])
 ylim([0,1.15*max(Force3)])
 ylabel('Load(kN)','FontName','Times New Roman','fontsize',24)

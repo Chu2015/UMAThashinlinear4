@@ -30,15 +30,21 @@ legend([a,b,aa,bb,aaa,bbb],'[0]_1_0-H60mm-linear.','[0]_1_0-H60mm-exponential.',
 % legend([e,f,ee,ff,eee,fff],'[0/90]_{5}-\Phi60mm-linear','[0/90]_{5}-\Phi60mm-exponential','[0/90]_{5}-\Phi80mm-linear','[0/90]_{5}-\Phi80mm-exponential','[0/90]_{5}-\Phi100mm-linear','[0/90]_{5}-\Phi100mm-exponential');
 % legend([c,d,cc,dd,ccc,ddd],'60-45-lin','60-45-exp','80-45-lin','80-45-exp','100-45-lin','100-45-exp');
 % legend([bb,dd,ff],'[0]10-H80mm','[45]10-H80mm','[0/90]10-H80mm');
- grid on
+%  grid on
 xlim([0,1.1*max(u_60_0_lin)])
 ylim([0,1.15*max(f_60_0_lin)])
+% ylabel('Load(kN)','FontName','Times New Roman','fontsize',24)
+% xlabel('Displacement(mm)','FontName','Times New Roman','fontsize',24)
+% set(gca,'FontName','Times New Roman','fontsize',24)
+axis([0 1.5 0 90000]);
 ylabel('Load(kN)','FontName','Times New Roman','fontsize',24)
 xlabel('Displacement(mm)','FontName','Times New Roman','fontsize',24)
+grid on
 set(gca,'FontName','Times New Roman','fontsize',24)
-axis([0 1.5 0 90000]);
- 
- Y=max(f_60_45_exp);
+set(h,'FontName','Times New Roman','fontsize',24)
+set(h, 'Box', 'off')
+
+Y=max(f_60_45_exp);
  
  
  
