@@ -1,27 +1,57 @@
-figure(1);
-% a = plot(Disp31,Load31*1000,'b','LineWidth',3);hold on;
-% a1 = plot(u_60_45_exp_n1,f_60_45_exp_n1,'-.b','LineWidth',3);hold on;
-% a2 = plot(u_60_45_exp_n2,f_60_45_exp_n2,':b','LineWidth',3);hold on;
-% a3 = plot(u_60_45_exp_n3,f_60_45_exp_n3,'--b','LineWidth',3);hold on;
+u_60_0_90=importdata('60_0-90_dis.txt');
+f_60_0_90=importdata('60_0-90_force.txt');
+u_80_0_90=importdata('80_0-90_dis.txt');
+f_80_0_90=importdata('80_0-90_force.txt');
+u_100_0_90=importdata('100_0-90_dis.txt');
+f_100_0_90=importdata('100_0-90_force.txt');
 
-b = plot(u_100_0,f_100_0*1000,'k','LineWidth',3);hold on;
-% b1 = plot(u_80_45_exp_n1,f_80_45_exp_n1,'-.k','LineWidth',3);hold on;
-% b2 = plot(u_80_45_exp_n2,f_80_45_exp_n2,':k','LineWidth',3);hold on;
-% b3 = plot(u_80_45_exp_n3,f_80_45_exp_n3,'--k','LineWidth',3);hold on;
+u_60_45=importdata('60_45_dis.txt');
+f_60_45=importdata('60_45_force.txt');
+u_80_45=importdata('80_45_dis.txt');
+f_80_45=importdata('80_45_force.txt');
+u_100_45=importdata('100_45_dis.txt');
+f_100_45=importdata('100_45_force.txt');
 
-% c = plot(Disp33,Load33*1000,'r','LineWidth',3);hold on;
-% c1 = plot(u_100_45_exp_n1,f_100_45_exp_n1,'-.r','LineWidth',3);hold on;
-% c2 = plot(u_100_45_exp_n2,f_100_45_exp_n2,':r','LineWidth',3);hold on;
-% c3 = plot(u_100_45_exp_n3,f_100_45_exp_n3,'--r','LineWidth',3);hold on;
+f_60_0_90=f_60_0_90';
+f_80_0_90=f_80_0_90';
+f_100_0_90=f_100_0_90';
+f_60_45=f_60_45';
+f_80_45=f_80_45';
+f_100_45=f_100_45';
 
-% legend([a,a2,b,b2,c,c2],'[45]10-H60mm','[45]10-H60mm-Shear Nonlinearity','[45]10-H80mm','[45]10-H80mm-Shear Nonlinearity','[45]10-H100mm','[45]10-H100mm-Shear Nonlinearity');
- legend([b],'[0]10-H100mm-Expt.');
+% figure(1);
+% 
+% a = plot(u_60_0_90,f_60_0_90,'b','LineWidth',3);hold on;
+% b = plot(u_80_0_90,f_80_0_90,'k','LineWidth',3);hold on;
+% c = plot(u_100_0_90,f_100_0_90,'r','LineWidth',3);hold on;
+% 
+% legend([a,b,c],'[0/90]_{5}-H60mm-Expt.','[0/90]_{5}-H80mm-Expt.','[0/90]_{5}-H100mm-Expt.');
+% xlim([0,1.1*max(u_60_0_90)])
+% ylim([0,1.15*max(f_60_0_90)])
+% grid on
+% ylabel('Load(kN)','FontName','Times New Roman','fontsize',24)
+% xlabel('Displacement(mm)','FontName','Times New Roman','fontsize',24)
+% set(gca,'FontName','Times New Roman','fontsize',24)
+% set(h,'FontName','Times New Roman','fontsize',24)
+% set(h, 'Box', 'off')
+% hold on
+
+figure(2);
+
+d = plot(u_60_45,f_60_45,'b','LineWidth',3);hold on;
+e = plot(u_80_45,f_80_45,'k','LineWidth',3);hold on;
+f = plot(u_100_45,f_100_45,'r','LineWidth',3);hold on;
+
+legend([d,e,f],'[45/-45]_{5}-H60mm-Expt.','[45/-45]_{5}-H80mm-Expt.','[45/-45]_{5}-H100mm-Expt.');
+xlim([0,1.1*max(u_80_45)])
+ylim([0,1.15*max(f_60_45)])
 grid on
- xlabel('Œª“∆(mm)');
- ylabel('‘ÿ∫…(N)');
- axis([0 6 0 40000]);
- 
- Y=max(f_60_45_exp);
+ylabel('Load(kN)','FontName','Times New Roman','fontsize',24)
+xlabel('Displacement(mm)','FontName','Times New Roman','fontsize',24)
+set(gca,'FontName','Times New Roman','fontsize',24)
+set(h,'FontName','Times New Roman','fontsize',24)
+set(h, 'Box', 'off')
+Y=max(f_60_45_exp);
  
  
  
