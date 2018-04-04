@@ -15,26 +15,26 @@
 % 
 % legend([c,a,b],'0','0-90','±45');
 
-%Simulation Result：
+% Simulation Result：
 % 0
-% x1=[0.375 0.5 0.625];
-% y1=[78.74E+03 61.55E+03 47.79E+03];
-% c=scatter(x1,y1,'o','b');hold on;
+x1=[0.375 0.5 0.625];
+y1=[87.36E+03 71.05E+03 52.31E+03];
+scatter(x1,y1,'o','k');hold on;
 
 % 0-90
-% x2=[0.375 0.5 0.625];
-% y2=[56.72e+03  48.17e+03  34.59E+03];
-% a=scatter(x2,y2,'x','k');hold on;
+x2=[0.375 0.5 0.625];
+y2=[53.01e+03  48.29e+03  38.90E+03];
+scatter(x2,y2,'x','r');hold on;
 
 %  +-45
-% x3=[0.375 0.5 0.625];
-% y3=[27.34E+03  21.73E+03 16.09E+03];
-% b=scatter(x3,y3,'s','r');hold on;
+x3=[0.375 0.5 0.625];
+y3=[25.86E+03  20.56E+03 15.05E+03];
+scatter(x3,y3,'s','b');hold on;
 
-% legend([c,a,b],'0','0-90','±45');
+% legend([c,a,b],'[0]_{10}-simulation','[0/90]_{5}-simulation','[45/-45]_{5}-simulation');
 
-%experimental results
-%0
+% experimental results
+% 0
 a1=[0.375 0.5 0.625];
 b1=[78.23E+03 69.725E+03 35.00E+03];
 scatter(a1,b1,'o','k');
@@ -50,20 +50,18 @@ b3=[28.717E+03 23.785E+03 17.602E+03];
 scatter(a3,b3,'s','b');hold on;
 
 figure(1);
-% a = plot(x1,y1,'k','LineWidth',3);
-% b = plot(x2,y2,'r','LineWidth',3);
-% c = plot(x3,y3,'b','LineWidth',3);
+a = plot(x1,y1,'k','LineWidth',3);
+b = plot(x2,y2,'r','LineWidth',3);
+c = plot(x3,y3,'b','LineWidth',3);
 
 d = plot(a1,b1,'--k','LineWidth',3);
 e = plot(a2,b2,'--r','LineWidth',3);
 f = plot(a3,b3,'--b','LineWidth',3);
-legend([d,e,f],'[0]_{10}-experiment','[0/90]_{5}-experiment','[45/-45]_{5}-experiment');
-% legend([a,d,b,e,c,f],'[0]_{10}-numerical','[0]_{10}-experiment','[0/90]_{5}-numerical','[0/90]_{5}-experiment','[45/-45]_{5}-numerical','[45/-45]_{5}-experiment');
- grid on
+% legend([d,c,e,a,f,b],'[0]_{10}-实验值','[0]_{10}-计算值','[0/90]_{5}-实验值','[0/90]_{5}-计算值','[45/-45]_{5}-实验值','[45/-45]_{5}-计算值');
+legend([a,d,b,e,c,f],'[0]_{10}-计算值','[0]_{10}-实验值','[0/90]_{5}-计算值','[0/90]_{5}-实验值','[45/-45]_{5}-计算值','[45/-45]_{5}-实验值');
+axis([0.35 0.65 0 100000]);
+grid on
 xlabel('直径/宽度');
 ylabel('极限载荷(N)')
 
-figure(2);
-plot(X,temp_1,X1,temp_2,X2,temp_3,'b');
-grid on
 
