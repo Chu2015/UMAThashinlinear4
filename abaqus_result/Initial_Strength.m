@@ -63,10 +63,10 @@ c = plot(x3,y3,'b','LineWidth',3);
 % e = plot(a2,b2,'--r','LineWidth',3);
 % f = plot(a3,b3,'--b','LineWidth',3);
 % legend([d,c,e,a,f,b],'[0]_{10}-实验值','[0]_{10}-计算值','[0/90]_{5}-实验值','[0/90]_{5}-计算值','[45/-45]_{5}-实验值','[45/-45]_{5}-计算值');
-legend([a,b,bb,c],'[0]_{10}','90°ply in [0/90]_{5} ','0°ply in [0/90]_{5}','[45/-45]_{5}');
+legend([a,b,bb,c],'[0]_{10}','[0/90]_{5}中的90°层','[0/90]_{5}中的0°层','[45/-45]_{5}');
 axis([0.35 0.65 0 50000]);
 grid on
-xlabel('Diameter/Width');
-ylabel('Initial Damage Loading(N)')
+xlabel('孔径宽度比');
+ylabel('初始失效载荷(N)')
 
 
