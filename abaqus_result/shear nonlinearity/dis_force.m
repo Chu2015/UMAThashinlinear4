@@ -19,7 +19,7 @@ dd = plot(u_60_45_exp_n2(1:25),f_60_45_exp_n2(1:25)*0.001,':b','LineWidth',3);ho
 ee = plot(u_80_45_exp_n2(1:30),f_80_45_exp_n2(1:30)*0.001,':k','LineWidth',3);hold on;
 ff = plot(u_100_45_exp_n2(1:18),f_100_45_exp_n2(1:18)*0.001,':r','LineWidth',3);hold on;
 
-legend([d,dd,e,ee,f,ff],'H60mm-实验','H60mm-计算','H80mm-实验','H80mm-计算','H100mm-实验','H100mm-计算');
+legend([d,dd,e,ee,f,ff],'H60mm-experiment','H60mm-calculation','H80mm-experiment','H80mm-calculation','H100mm-experiment','H100mm-calculation');
 xlim([0,1.1*max(u_80_45)])
 ylim([0,1.15*max(f_60_45)])
 grid on
